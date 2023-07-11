@@ -1,0 +1,44 @@
+version: "3.4"
+services:
+    nopcommerce_web:
+        build: .
+        container_name: nopcommerce
+        ports:
+            - "0.0.0.0:3000:80"
+            #- "127.0.0.1:3000:80"
+            #- target: 80
+            #    published: 8080
+            #    protocol: tcp
+            #    mode: host
+
+            #- "80:80" #- "3000:80"
+            #- "443:443"
+        networks:
+            - devnop_default
+        #deploy:
+            #mode: replicated
+            #replicas: 2
+            #endpoint_mode: vip
+        depends_on:
+            - nopcommerce_database
+    nopcommerce_database:
+        image: "mcr.microsoft.com/mssql/server:2017-latest"
+        container_name: nopcommerce_mssql_server
+        environment:
+            SA_PASSWORD: "nopCommerce_db_password"
+            ACCEPT_EULA: "Y"
+            MSSQL_PID: "Express"
+        #ports:
+            #- "14:1433"
+        volumes:
+        - nopcommerce_data:/var/opt/mssql/data
+        #deploy:
+        #mode: replicated
+        #replicas: 2
+        #endpoint_mode: dnsrr
+
+volumes:
+  nopcommerce_data:
+
+networks:
+  devnop_default:

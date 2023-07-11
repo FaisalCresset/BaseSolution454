@@ -1,0 +1,69 @@
+schemaVersion: 2.1.0
+metadata:
+  name: dotnet60
+  displayName: .NET 6.0
+  description: Stack with .NET 6.0
+  icon: https://github.com/dotnet/brand/raw/main/logo/dotnet-logo.png
+  language: .NET
+  projectType: dotnet
+  tags:
+    - .NET
+  version: 1.0.2
+starterProjects:
+  - name: devnop
+    git:
+      checkoutFrom:
+        remote: origin
+        revision: dotnet-6.0
+      remotes:
+        origin: https://github.com/nopSolutions/nopCommerce #https://github.com/redhat-developer/s2i-dotnetcore-ex
+    subDir: app
+
+components:
+  - name: code-ide
+    container:
+      memoryLimit: 4096M #512M
+      memoryRequest: 1024M #256M
+
+  - name: dotnet
+    container:
+      image: mcr.microsoft.com/dotnet/aspnet:6.0-alpine #registry.access.redhat.com/ubi8/dotnet-60:6.0
+      args: ["tail", "-F", "/dev/null"]
+
+      memoryLimit: 512Mi
+      mountSources: true
+      command: ['sleep', 'infinity']
+      env:
+        - name: CONFIGURATION
+          value: Release #Debug
+        - name: STARTUP_PROJECT
+          value: Nop.Web.csproj #app.csproj
+        - name: RunDevNop
+          value: Nop.Web.dll #--urls=http://0.0.0.0:3000
+        - name: ASPNETCORE_ENVIRONMENT
+          value: Production #Development
+        - name: ASPNETCORE_URLS
+          value: http://*:4000
+      endpoints:
+        - name: web
+          targetPort: 8080 #targetPort: 3000 #targetPort: 8080
+          exposure: public
+          protocol: https
+          secure: false #true #means endpoint is behind jwt token
+commands:
+  - id: build
+    exec:
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: kill $(pidof dotnet); dotnet build -c $CONFIGURATION $STARTUP_PROJECT /p:UseSharedCompilation=false
+      component: dotnet
+      group:
+        isDefault: true
+        kind: build
+  - id: run
+    exec:
+      workingDir: ${PROJECT_SOURCE}
+      commandLine: dotnet run -c $CONFIGURATION --no-build --project $STARTUP_PROJECT --no-launch-profile
+      component: dotnet
+      group:
+        isDefault: true
+        kind: run
